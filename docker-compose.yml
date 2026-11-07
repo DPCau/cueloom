@@ -1,0 +1,25 @@
+# Requires a local .env (copied from .env.example by ctl.sh menu 6); .env is gitignored.
+# Volumes are Docker named volumes: no artifacts are written into this project directory.
+services:
+  cueloom:
+    build: .
+    image: cueloom:local
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:${CUELOOM_PORT:-8000}:8000"
+    volumes:
+      - cueloom-work:/app/work
+      - cueloom-out:/app/out
+      - cueloom-models:/app/models
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  cueloom-work:
+  cueloom-out:
+  cueloom-models:

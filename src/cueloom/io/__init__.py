@@ -1,0 +1,1 @@
+"""Stage artifact I/O."""

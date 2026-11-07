@@ -71,6 +71,7 @@ flowchart TD
 | 6 | 初始化环境 | `uv sync`；若 `.env` 不存在则从 `.env.example` 复制并提示填写 |
 | 7 | Docker 模式 | 子菜单 up / down / status / logs；**明确提示会在 Docker 引擎侧产生镜像，需用户另行确认** |
 | 8 | 运行一次流水线 | M1 实现后接 `cueloom run`，框架阶段显示「未实现」 |
+| 9 | 测试 LLM 连接 | 显式发起一次 2 条 cue 的最小探活请求，只返回结果类别，不打印密钥 |
 | 0 | 退出 | — |
 
 实现约定：

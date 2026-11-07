@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CueLoom 控制台</title>
+<style>
+:root{color-scheme:dark light;--bg:#101317;--panel:#181c22;--panel2:#1f242c;--text:#e8ecf2;--muted:#98a2b3;--line:#2c333d;--ok:#4ade80;--bad:#f87171;--accent:#7aa2f7}
+@media (prefers-color-scheme:light){:root{--bg:#f6f7f9;--panel:#ffffff;--panel2:#f0f2f5;--text:#1b1f26;--muted:#5b6472;--line:#dde2e8;--ok:#16a34a;--bad:#dc2626;--accent:#2563eb}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;padding:24px}
+.wrap{max-width:1080px;margin:0 auto}
+header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+h1{font-size:20px;font-weight:600;margin:0;letter-spacing:.5px}
+.sub{color:var(--muted);font-size:13px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--bad);margin-right:6px}
+.dot.on{background:var(--ok)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card h2{font-size:13px;font-weight:600;margin:0 0 12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:3px 0;font-size:13px}
+.kv span:first-child{color:var(--muted)}
+.kv span:last-child{text-align:right;word-break:break-all}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);font-size:12px}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px}
+th{color:var(--muted);font-weight:500;background:var(--panel2)}
+tr:last-child td{border-bottom:none}
+.empty{color:var(--muted);padding:18px 14px}
+footer{margin-top:16px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.err{color:var(--bad)}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span id="dot" class="dot"></span>CueLoom 控制台</h1>
+    <span class="sub" id="headline">正在连接服务…</span>
+  </header>
+
+  <div class="grid">
+    <div class="card"><h2>服务</h2><div id="service"></div></div>
+    <div class="card"><h2>自有 LLM</h2><div id="llm"></div></div>
+    <div class="card"><h2>识别与断句</h2><div id="pipeline"></div></div>
+    <div class="card"><h2>输出与路径</h2><div id="output"></div></div>
+  </div>
+
+  <table>
+    <thead><tr><th>Job ID</th><th>状态</th><th>阶段</th><th>源语言</th><th>目标语言</th><th>创建时间</th></tr></thead>
+    <tbody id="jobs"><tr><td class="empty" colspan="6">加载中…</td></tr></tbody>
+  </table>
+
+  <footer>
+    <span>只读看板 · 每 <span id="refresh">5</span> 秒刷新 · 不提供写操作</span>
+    <span id="updated">—</span>
+  </footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+const kv = (k, v) => `<div class="kv"><span>${esc(k)}</span><span>${esc(v)}</span></div>`;
+const bool = (v) => v ? "是" : "否";
+
+function render(health, status, jobs) {
+  $("dot").className = health.ok ? "dot on" : "dot";
+  $("headline").textContent = health.ok
+    ? `运行正常 · v${health.version} · 已运行 ${Math.round(health.uptime_sec)} 秒`
+    : "服务不可用";
+  const c = status.config || {};
+  const s = c.service || {}, l = c.llm || {}, a = c.asr || {}, al = c.align || {}, sg = c.segment || {}, o = c.output || {}, p = c.paths || {};
+  $("refresh").textContent = s.dashboard_refresh_sec || 5;
+  $("service").innerHTML =
+    kv("监听地址", `${s.host || "-"}:${s.port || "-"}`) +
+    kv("日志级别", s.log_level || "-") +
+    kv("Job 数", status.jobs_count ?? "-") +
+    kv("流水线", status.pipeline && status.pipeline.implemented ? "可用" : "M1 待实现");
+  $("llm").innerHTML =
+    kv("端点", l.base_url || "未配置") +
+    kv("模型", l.model || "未配置") +
+    kv("密钥", l.api_key_configured ? "已配置" : "未配置") +
+    kv("配置完整", `<span class="pill">${bool(l.configured)}</span>`) +
+    kv("并发 / 缓存", `${l.max_concurrency ?? "-"} / ${bool(l.cache)}`) +
+    kv("反思轮", bool(l.reflection)) +
+    kv("探活", status.llm_probe || "-");
+  $("pipeline").innerHTML =
+    kv("ASR 后端", a.backend || "-") +
+    kv("ASR 模型", a.model || "-") +
+    kv("对齐后端", al.backend || "-") +
+    kv("CPS 范围", `${sg.min_cps ?? "-"}–${sg.max_cps ?? "-"} 字/秒`) +
+    kv("LLM 辅助断句", bool(sg.llm_assist));
+  $("output").innerHTML =
+    kv("格式", (o.formats || []).join(", ") || "-") +
+    kv("双语", bool(o.bilingual)) +
+    kv("work", p.work || "-") +
+    kv("out", p.out || "-");
+  const rows = (jobs || []).map((j) => `<tr><td>${esc(j.job_id)}</td><td>${esc(j.status)}</td><td>${esc(j.stage || "-")}</td><td>${esc(j.source_lang || "自动")}</td><td>${esc(j.target_lang || "-")}</td><td>${esc(j.created_at || "-")}</td></tr>`).join("");
+  $("jobs").innerHTML = rows || `<tr><td class="empty" colspan="6">暂无 job 记录。运行流水线后，work/&lt;job_id&gt;/job.json 会出现在这里。</td></tr>`;
+  $("updated").textContent = `最后更新 ${new Date().toLocaleTimeString()}`;
+}
+
+async function refresh() {
+  try {
+    const [h, st, jb] = await Promise.all([
+      fetch("/api/health").then((r) => r.json()),
+      fetch("/api/status").then((r) => r.json()),
+      fetch("/api/jobs").then((r) => r.json())
+    ]);
+    render(h, st, jb);
+  } catch (e) {
+    $("dot").className = "dot";
+    $("headline").innerHTML = `<span class="err">连接失败：${esc(e.message)}</span>`;
+  }
+}
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

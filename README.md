@@ -3,7 +3,7 @@
 把视频 / 音频转成**带翻译的字幕文件**（SRT / VTT / ASS）。
 不做配音、不烧录、不合成视频；翻译由使用者自有的 LLM 服务完成。
 
-> 仓库状态（2026-11-08）：`main` 分支已绑定远端 `https://github.com/DPCau/cueloom.git`，M0 文档已首次提交并推送（`2cadb7a`）；**尚无源码**；`.venv`（Python 3.12.10）已由 `uv` 创建。
+> 仓库状态（2026-11-08）：`main` 已绑定 `https://github.com/DPCau/cueloom.git` 并持续推送；M0 文档 + M0.5 框架（控制台 / 服务 / 看板 / Docker 配置）已完成；**五阶段流水线仍是骨架，M1 才实现**；`.venv`（Python 3.12.10）由 `uv` 管理。
 > 规范路径：`~/MyProject/cueloom`（macOS 大小写不敏感，写 `~/Myproject/cueloom` 也指向同一目录）。
 
 ## 新会话必读
