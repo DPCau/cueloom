@@ -5,7 +5,7 @@
 | 里程碑 | 目标 | 完成标志 | 状态 |
 |---|---|---|---|
 | M0 | 调研、选型、命名、仓库与文档 | 本套 `docs/` + git 初始化 + 黑板交接记录 | **已完成（2026-11-08）** |
-| M0.5 | 项目框架、控制台与看板 | `pyproject.toml` + `.env.example` + `ctl.sh` + FastAPI 只读看板 + Docker 配置；冒烟后服务已关闭 | 进行中（2026-11-08） |
+| M0.5 | 项目框架、控制台与看板 | `pyproject.toml` + `.env.example` + `ctl.sh` + FastAPI 只读看板 + Docker 配置；冒烟后服务已关闭 | **已完成（2026-11-08）** |
 | M1 | 可跑 CLI 端到端 | 一段 30–60 s 音频 → 双语 SRT，五阶段 JSONL 齐全，可 resume | 待开始 |
 | M2 | 质量对齐基线 | T1–T5 测试集 + VideoLingo 基线 + 回归脚本，指标达标 | 待开始 |
 | M3 | 服务化 | FastAPI 薄封装（`/jobs`、`/jobs/{id}`），CLI 与 API 共用 pipeline | 待开始 |
