@@ -32,14 +32,15 @@
 - G-3 输出单语或双语（同一 cue 内两行）的 SRT / VTT / ASS 文件。
 - G-4 每阶段产物落盘 JSONL，支持断点续跑、单阶段重跑、A/B 对比。
 - G-5 输出前自动质检：时间码、阅读速度、术语、数字、cue 覆盖率。
-- G-6 CLI 与 Python API 可用；FastAPI 仅作为薄封装（M3）。
+- G-6 CLI 与 Python API 可用；FastAPI 作为薄封装，提供 `/api/*` 只读状态接口。
+- G-7 `./ctl.sh` 交互式菜单统一管理服务启停与状态；浏览器看板可观测；支持 Docker 部署（详见 `09`）。
 
 ## 5. 非目标（Out of Scope，一期明确不做）
 
 - N-1 TTS、配音、声音克隆、多角色分轨、BGM 混合、语速对齐。
 - N-2 硬字幕烧录、软字幕封装、音视频合成、转码、画面裁切。
 - N-3 yt-dlp / 在线视频下载、平台账号与 cookie。
-- N-4 桌面 GUI、Web UI（Streamlit/Gradio 一律不引入）。
+- N-4 桌面 GUI、Streamlit / Gradio / 前端框架与构建工具一律不引入；**例外**：允许零构建的只读浏览器运维看板（见 `09`、ADR-010），只展示状态与产物，不编辑字幕、不承载业务逻辑。
 - N-5 已有硬字幕的 OCR 识别（如确需，另用 Subtitle Edit 人工处理）。
 - N-6 多租户、鉴权、计费、分布式队列（一期）。
 - N-7 自研 ASR / 训练模型、微调翻译模型。
@@ -85,6 +86,7 @@
 ## 9. 环境与运行约定
 
 - Python 3.11+；依赖用 `uv` 管理：`uv sync`、`uv run cueloom ...`。
+- 服务统一由 `./ctl.sh` 菜单启停（不传复杂参数）；环境变量集中放 `.env`（由 `.env.example` 复制，不入库）；详见 `09`。
 - 不做全局 pip 安装；不引入 conda。
 - 模型权重放 `models/`（已 gitignore），首次运行按需下载并校验 hash。
 - 密钥只从环境变量或 `configs/local.yaml`（已 gitignore）读取，不写进代码或文档。

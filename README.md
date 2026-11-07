@@ -12,6 +12,14 @@
 所有调研结论、设计决策、命名核验与未决问题都已落盘到 `docs/`。
 项目会话开工请按 `docs/README.md` 的阅读顺序执行，至少读 `00`、`02`、`03`、`08`。
 
+## 快速开始
+
+```bash
+./ctl.sh          # 交互式菜单：1 启动 / 2 停止 / 3 状态 / 6 初始化环境
+```
+
+首次使用选 `6` 生成 `.env`，填入 `CUELOOM_LLM_BASE_URL` / `CUELOOM_LLM_API_KEY` / `CUELOOM_LLM_MODEL`；浏览器看板默认 http://127.0.0.1:8000 。服务测完请及时用菜单 `2` 关闭。详细设计见 `docs/09-console-and-deploy.md`。
+
 ## 硬约束（设计不得破坏）
 
 1. 输出只有字幕文件：不烧录、不 mux、不生成视频、不下载视频。
@@ -25,6 +33,10 @@
 | 路径 | 内容 |
 |---|---|
 | `docs/` | 全部设计文档，索引见 `docs/README.md` |
+| `ctl.sh` | **唯一入口**：交互式菜单启停服务 / 查看状态 / 环境初始化 / Docker 模式 |
+| `src/cueloom/` | 流水线骨架、FastAPI 服务与零构建浏览器看板 |
+| `.env.example` | 环境变量模板（LLM API 等），复制为 `.env` 后填写，`.env` 不入库 |
+| `Dockerfile` / `docker-compose.yml` | 部署配置；构建产物不落本机项目目录 |
 | `.agents/blackboard.md` | 多智能体协同黑板（追加写、已在 `.gitignore` 排除 git） |
 
 ## 命名

@@ -93,7 +93,8 @@ cueloom/
 | 可选 | `qwen-asr` / `funasr` / `transformers` | 中文 ASR 后端 | 按需 extras，避免默认安装重型 torch 栈 |
 | 可选 | `whisperx` | 对齐备选后端 | 依赖复杂，放 extras |
 | 可选 | `langdetect` / `fasttext` | 语言检测、译文语种校验 | |
-| M3 | `fastapi` / `uvicorn` | 服务化 | 一期不装 |
+| 核心（由 M3 提前，见 §10） | `fastapi` / `uvicorn` | 服务层与零构建看板 | 框架阶段即装 |
+| 核心 | `python-dotenv` | 读 `.env` | 不引 pydantic-settings，保持轻量 |
 | 开发 | `pytest` / `ruff` | 测试与静态检查 | |
 
 **依赖红线**：不引入 Streamlit / Gradio / PySide / yt-dlp / TTS 相关包 / FFmpeg 二进制依赖。
@@ -145,3 +146,35 @@ out/<job_id>/
 
 不引入插件系统、不引入工作流引擎、不引入数据库、不引入对象存储、不引入消息队列、不引入前端。
 若未来要支持「已有 SRT 文件直接翻译」，应作为 `--input-srt` 的旁路入口，跳过 Stage 1/2，而不是改造成通用工作流。
+
+## 10. 控制面、看板与部署（2026-11-08 增补，见 `09`）
+
+用户追加 U-1 ~ U-6 后，架构在**不改变数据面**的前提下增加控制面与观测面：
+
+| 层 | 新增组件 | 与既有架构的关系 |
+|---|---|---|
+| 控制面 | `ctl.sh` 交互式菜单 | 只管进程与部署，不解析业务参数；`pipeline.py` 仍是唯一业务入口 |
+| 观测面 | `server.py`（FastAPI）+ `web/index.html` | 只读聚合 `work/<job_id>/job.json` 与配置；不引数据库 / 队列 / 前端构建 |
+| 配置面 | `.env.example` / `.env` / `configs/default.yaml` | 沿用 §8 配置分层，`.env` 仅本机存在 |
+| 部署面 | `Dockerfile` / `docker-compose.yml` / `.dockerignore` | named volume 承载 work/out/models，不 bind mount 项目目录 |
+
+增量目录（其余见 §3）：
+
+```
+cueloom/
+  ctl.sh                      # U-1 唯一入口
+  .env.example                # U-3 模板，可提交
+  .env                        # 本地密钥，gitignore
+  Dockerfile  docker-compose.yml  .dockerignore
+  configs/
+    default.yaml
+    prompts/translate.system.md
+    prompts/reflect.system.md
+    glossary.example.yaml
+  src/cueloom/
+    server.py                 # /api/health /status /jobs（只读）
+    web/index.html            # U-2 零构建看板
+  work/ctl/                   # server.pid / server.log（gitignore）
+```
+
+依赖调整：`fastapi` / `uvicorn` 从「M3 才装」提前到核心（服务框架需要），`python-dotenv` 用于读 `.env`；ASR 重型依赖仍放 extras，默认安装保持轻量。ADR-006 的「CLI 优先、FastAPI 只薄封装」精神保留，仅时间点提前。
