@@ -1,0 +1,41 @@
+# 多智能体协同黑板：始终排除 git 管理（项目强制约定）
+.agents/blackboard.md
+
+# Python / uv
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# 模型权重与运行产物（体积大 / 可再生）
+models/
+*.bin
+*.gguf
+*.pt
+*.onnx
+*.safetensors
+out/
+work/
+*.log
+
+# 本地配置与密钥
+.env
+.env.*
+!.env.example
+configs/local.yaml
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+
+# 工作台项目数据（非缓存，勿删，但不纳入版本管理）
+.workbuddy/
