@@ -1,4 +1,4 @@
-"""OpenAI-compatible chat completions client and a lightweight connectivity probe."""
+"""OpenAI-compatible chat completions client, mock client, and connectivity probe."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from cueloom.llm.schema import RESPONSE_SCHEMA
 
 
 class LlmClient(Protocol):
-    def complete_json(self, system: str, payload: dict, schema: dict) -> dict: ...
+    def complete_json(self, system: str, payload: dict, schema: dict | None = None) -> dict: ...
 
 
 class OpenAiCompatibleClient:
@@ -41,6 +41,43 @@ class OpenAiCompatibleClient:
             response.raise_for_status()
             content = response.json()["choices"][0]["message"]["content"]
         return json.loads(content)
+
+
+class MockLlmClient:
+    """Deterministic mock translator for testing, CI, and local demos."""
+
+    SAMPLE_TRANSLATIONS: dict[str, str] = {
+        "welcome to the channel.": "欢迎来到本频道。",
+        "today we build an agent with cueloom.": "今天我们用 CueLoom 构建一个智能体。",
+        "it preserves timecodes and glossaries.": "它保留了时间轴和术语表。",
+        "let us inspect the output format in detail.": "让我们详细检查输出格式。",
+        "hello": "你好",
+        "welcome back to the channel": "欢迎回到本频道",
+        "today we build an agent": "今天我们构建一个智能体",
+    }
+
+    def complete_json(self, system: str, payload: dict, schema: dict | None = None) -> dict:
+        items = payload.get("items", [])
+        glossary = payload.get("glossary", [])
+        tgt_items = []
+        for it in items:
+            cid = it["id"]
+            src_text = it["text"]
+            key = src_text.strip().lower()
+            if key in self.SAMPLE_TRANSLATIONS:
+                translated = self.SAMPLE_TRANSLATIONS[key]
+            else:
+                translated = f"[译] {src_text}"
+
+            # Apply glossary overrides
+            for g in glossary:
+                src = g.get("src", "")
+                tgt = g.get("tgt", "")
+                if src and tgt and src in src_text and not g.get("do_not_translate", False):
+                    translated = translated.replace(src, tgt)
+
+            tgt_items.append({"id": cid, "text": translated})
+        return {"items": tgt_items}
 
 
 def probe(cfg: LlmConfig) -> dict:

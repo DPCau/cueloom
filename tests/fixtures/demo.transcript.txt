@@ -1,0 +1,4 @@
+Welcome to the channel.
+Today we build an agent with CueLoom.
+It preserves timecodes and glossaries.
+Let us inspect the output format in detail.

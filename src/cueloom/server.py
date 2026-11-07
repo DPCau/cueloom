@@ -69,7 +69,7 @@ def status() -> dict:
         "uptime_sec": round(time.monotonic() - START, 1),
         "config": CFG.public_summary(),
         "jobs_count": len(_job_files()),
-        "pipeline": {"implemented": False, "note": "five-stage pipeline lands in M1"},
+        "pipeline": {"implemented": True, "note": "five-stage pipeline ready"},
         "llm_probe": "skipped",
     }
 

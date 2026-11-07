@@ -32,7 +32,7 @@ def test_status_is_redacted() -> None:
     assert "api_key" not in llm
     assert "CUELOOM_LLM_API_KEY" not in json.dumps(body)
     assert isinstance(llm["api_key_configured"], bool)
-    assert body["pipeline"]["implemented"] is False
+    assert body["pipeline"]["implemented"] is True
 
 
 def test_jobs_and_artifacts_are_read_only_lists() -> None:

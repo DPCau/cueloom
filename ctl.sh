@@ -87,6 +87,11 @@ status_service() {
   echo ".env: $([[ -f "$ENV_FILE" ]] && echo 存在 || echo 不存在)"
   echo "venv: $([[ -x "$VENV_PY" ]] && echo 就绪 || echo 缺失)"
   echo "LLM: base_url=$([[ -n "${CUELOOM_LLM_BASE_URL:-}" ]] && echo 已设置 || echo 未设置) api_key=$([[ -n "${CUELOOM_LLM_API_KEY:-}" ]] && echo 已设置 || echo 未设置) model=$([[ -n "${CUELOOM_LLM_MODEL:-}" ]] && echo 已设置 || echo 未设置)"
+  local job_cnt=0
+  if [[ -d "$ROOT/work" ]]; then
+    job_cnt="$(find "$ROOT/work" -maxdepth 2 -name "job.json" 2>/dev/null | wc -l | tr -d ' ')"
+  fi
+  echo "Job 记录数: $job_cnt"
 }
 
 logs_service() {
@@ -109,8 +114,35 @@ probe_llm() {
 }
 
 run_pipeline() {
-  echo "五阶段流水线将在 M1 实现；当前只有骨架（docs/08-roadmap.md）。"
-  echo "本次不会启动任何模型或产生产物。"
+  if [[ ! -x "$VENV_PY" ]]; then echo "缺少 .venv，请先选 6 初始化环境"; return 1; fi
+  echo ""
+  echo "--- 运行字幕流水线 ---"
+  echo " 1) 运行测试素材 (tests/fixtures/demo.wav) -> 输出双语 SRT"
+  echo " 2) 输入自定义本地音视频文件路径"
+  echo " 0) 返回"
+  read -r -p "请输入数字 [1]: " sub_c || return 0
+  sub_c="${sub_c:-1}"
+  local media_file=""
+  local target_lang="zh-CN"
+  case "$sub_c" in
+    1)
+      media_file="$ROOT/tests/fixtures/demo.wav"
+      if [[ ! -f "$media_file" ]]; then
+        mkdir -p "$ROOT/tests/fixtures"
+        "$VENV_PY" -c "import wave, struct; f=wave.open('$media_file', 'w'); f.setnchannels(1); f.setsampwidth(2); f.setframerate(16000); f.writeframes(struct.pack('<h', 0) * 16000 * 2); f.close()"
+      fi
+      ;;
+    2)
+      read -r -p "请输入本地文件路径: " media_file || return 0
+      if [[ ! -f "$media_file" ]]; then echo "文件不存在: $media_file"; return 1; fi
+      read -r -p "目标语言 [zh-CN]: " input_lang || true
+      target_lang="${input_lang:-zh-CN}"
+      ;;
+    0) return 0 ;;
+    *) echo "无效选择"; return 0 ;;
+  esac
+  echo "开始执行流水线: $media_file -> $target_lang ..."
+  "$VENV_PY" -m cueloom.cli run "$media_file" --to "$target_lang" --bilingual
 }
 
 docker_menu() {
