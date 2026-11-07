@@ -1,0 +1,42 @@
+asr:
+  backend: faster-whisper       # faster-whisper | qwen3-asr | funasr
+  model: large-v3
+  device: auto                  # auto | cuda | cpu
+  compute_type: int8_float16
+  vad_filter: true
+  vad_min_silence_ms: 500
+  vad_speech_pad_ms: 400
+  condition_on_previous_text: false
+  hallucination_blacklist: ["thanks for watching", "subscribe", "字幕由"]
+align:
+  backend: qwen3-forced-aligner # qwen3-forced-aligner | whisperx | none
+  model: Qwen3-ForcedAligner-0.6B
+segment:
+  max_cps: 17                   # 中文 characters per second
+  min_cps: 12
+  max_chars_per_line: 14
+  max_lines: 2
+  min_duration_sec: 0.8
+  max_duration_sec: 7.0
+  llm_assist: false             # M1 用规则断句；M2 可选 LLM 辅助
+llm:
+  base_url: ""                  # 由 CUELOOM_LLM_BASE_URL 提供
+  model: ""                     # 由 CUELOOM_LLM_MODEL 提供
+  api_key_env: CUELOOM_LLM_API_KEY
+  timeout_sec: 60
+  max_concurrency: 4
+  max_retries: 3
+  batch_max_items: 30
+  batch_max_tokens: 1200
+  context_window: 3
+  reflection: false             # M2 再启用
+  cache: true
+output:
+  formats: [srt]
+  bilingual: true
+  bilingual_order: source_first  # source_first | target_first
+  max_cps_enforce: true
+server:
+  host: 127.0.0.1              # 由 CUELOOM_HOST 覆盖
+  port: 8000                    # 由 CUELOOM_PORT 覆盖
+  dashboard_refresh_sec: 5

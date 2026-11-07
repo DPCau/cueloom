@@ -1,0 +1,15 @@
+# 术语表样例：复制为 configs/glossary.yaml 后按需修改。
+# do_not_translate=true 的词要求原样保留（品牌名 / 代码标识符）。
+entries:
+  - src: Agent
+    tgt: 智能体
+    case_sensitive: false
+    do_not_translate: false
+  - src: MCP
+    tgt: MCP
+    case_sensitive: false
+    do_not_translate: true
+  - src: CueLoom
+    tgt: CueLoom
+    case_sensitive: true
+    do_not_translate: true

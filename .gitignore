@@ -39,3 +39,11 @@ configs/local.yaml
 
 # 工作台项目数据（非缓存，勿删，但不纳入版本管理）
 .workbuddy/
+
+# 控制台与 Docker 本机产物（U-6：不把 docker 产物放进工作区）
+.run/
+*.pid
+*.tar
+docker-compose.override.yml
+docker-compose.local.yml
+.docker/
