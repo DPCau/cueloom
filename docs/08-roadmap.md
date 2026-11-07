@@ -17,7 +17,7 @@
 - 阶段详设与 LLM 接入规范、质量体系、ADR、命名核验、风险与待决项（`04`–`07`）。
 - 仓库：`~/MyProject/cueloom`，`git init -b main`，`.gitignore`（含黑板排除），根 README。
 - 协同黑板：`~/MyProject/cueloom/.agents/blackboard.md`，已写入交接记录。
-- **未做**：源码、依赖安装、LICENSE、首次 git commit、CI。
+- **未做**：源码、依赖安装、LICENSE、CI。（首次 git commit 与远端推送已于 2026-11-08 完成，见 §7）
 
 ## 3. M1 任务拆解（项目会话第一目标）
 
@@ -61,7 +61,7 @@ pytest tests/unit tests/integration
 1. **读黑板**：`.agents/blackboard.md` 最后至少 10 行，了解 M0 结论。
 2. **读文档**：`docs/README.md` → `00` → `02` → `03` → `08`；实现某阶段时再读 `04` / `05`。
 3. **确认待决项**：`07 §4` 的 D-07（名字）、D-01（许可证）、D-02（ASR 默认后端）、D-06（LLM 服务 RPM/TPM 与预算）。
-4. **确认环境**：`uv --version`、Python 3.11+；检查 `git status`（M0 未提交，可先做一次初始提交，**注意 `.agents/blackboard.md` 已被 gitignore 排除**）。
+4. **确认环境**：`uv --version`、Python 3.11+；检查 `git status`（首次提交已完成，`main` 已跟踪 `origin/main`；**注意 `.agents/blackboard.md` 已被 gitignore 排除**）。
 5. **先写测试再写实现**：`tests/unit/test_segment.py` 与 `tests/integration/test_time_invariant.py` 是最能防止架构跑偏的两个。
 6. **每个阶段完成/改核心接口/得出测试结论/遇阻塞**，按规范单行追加黑板：
    `- [Agent名称][YYYY-MM-DD HH:MM] 关键动作/产出/状态`
@@ -75,5 +75,5 @@ pytest tests/unit tests/integration
 - 用户跨项目约定：Python 环境默认用 `uv` 在项目目录管理；需要代理时可用本机 7897 端口。
 - 规范路径 `~/MyProject/cueloom`（真实大小写为 `MyProject`）；macOS 大小写不敏感，`Myproject` 亦可。
 - `.workbuddy/` 是项目数据目录，不是缓存，**不要删除**。
-- git 状态：`main` 分支，尚无提交；`.agents/blackboard.md` 已在 `.gitignore` 中排除，**禁止提交或推送黑板**。
+- git 状态：`main` 分支，首次提交 `2cadb7a` 已推送 `origin/main`；`.agents/blackboard.md` 已在 `.gitignore` 中排除，**禁止提交或推送黑板**。
 - 外部数据（star / 版本 / CER / 许可证）为 2026-10/11 快照，实施前复核官方仓库与 model card。
