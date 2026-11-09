@@ -4,6 +4,7 @@
 .env
 .env.*
 configs/local.yaml
+configs/llm-profiles.json
 work
 out
 inbox

@@ -192,6 +192,34 @@ def create_app(root: Path | None = None) -> FastAPI:
     def task(task_id: str):
         return tasks.get(task_id)
 
+    @app.get("/api/llm/profiles")
+    def list_profiles():
+        return provider.profiles_public()
+
+    @app.post("/api/llm/profiles", status_code=201)
+    def add_profile(payload: dict):
+        return provider.save_profile(payload)
+
+    @app.post("/api/llm/profiles/import-current", status_code=201)
+    def import_current_profile(payload: dict):
+        if set(payload) != {"name"}:
+            raise ControlError("invalid_config", "仅需填写导入方案名称")
+        cfg = provider.snapshot().llm
+        return provider.save_profile({"name": payload["name"], "base_url": cfg.base_url,
+                                      "model": cfg.model, "api_key": cfg.api_key})
+
+    @app.put("/api/llm/profiles/{profile_id}")
+    def edit_profile(profile_id: str, payload: dict):
+        return provider.save_profile(payload, profile_id)
+
+    @app.post("/api/llm/profiles/{profile_id}/activate")
+    def activate_profile(profile_id: str):
+        return provider.activate_profile(profile_id)
+
+    @app.delete("/api/llm/profiles/{profile_id}")
+    def delete_profile(profile_id: str):
+        return provider.delete_profile(profile_id)
+
     @app.post("/api/llm/probe")
     def llm_probe():
         with probe_lock:

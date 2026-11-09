@@ -6,6 +6,9 @@
 
 ### 2026-11-09 实施与验收说明
 
+- LLM API 支持命名配置方案：API 页新建/编辑/删除、导入当前连接（密钥仅在服务端复制）、启用切换。保存与启用分开，编辑已启用方案需重新启用，运行中任务保持旧快照；环境变量覆盖时禁止切换。活动方案须先切换后才能删除。
+- 方案保存在忽略 Git 和 Docker 上下文的 `configs/llm-profiles.json`，权限 0600、原子写，密钥本地明文而非加密，不返回浏览器；编辑遗漏密钥则保留，明确清空才删除密钥。启用写入现有 `.env` 配置链，兼容 CLI 和重启；普通配置页仅保留翻译行为参数，连接信息统一在 API 页方案管理。接口 `/api/llm/profiles` 提供列表/新增，`/{id}` 修改/删除，`/{id}/activate` 启用，`/import-current` 导入。
+
 - 新增 `control/` 配置、鉴权、上传、任务服务；六页零构建前端；模型扫描、显式下载、默认切换与确认软删除均已接线。
 - 模型页按「用途 → 家族 → 版本」分组：语音识别下 Whisper 家族汇集 small / large-v3，faster-whisper 是运行引擎，不作为另一个平级家族。Qwen3 Forced Aligner 归时间对齐，明确尚未接入；未托管资产独立展示，不按名称猜家族。注册表维护 family/family_name/variant/description，API 增量返回展示字段；操作仍绑定唯一模型 ID，磁盘布局不变。
 - 上传采用 `POST /api/uploads` 原始文件 body + URL 编码 `X-Filename`；发任务为 `POST /api/jobs`，仅接受 upload ID 或显式 demo。不开放服务端路径。下载仅允许任务目录下 SRT/VTT/ASS。

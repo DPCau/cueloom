@@ -52,6 +52,53 @@ def configure(client):
     )
 
 
+def test_llm_profiles_persistence_switch_and_secrets(backend, monkeypatch):
+    app, client, root = backend
+    first = {"name": "日常", "base_url": "https://one.example/v1", "model": "one", "api_key": "profile-secret-one"}
+    r = client.post("/api/llm/profiles", headers=HEADERS, json=first)
+    assert r.status_code == 201
+    assert "profile-secret-one" not in r.text
+    pid = r.json()["profiles"][0]["id"]
+    assert app.state.provider.snapshot().llm.model != "one"
+    assert (root / "configs/llm-profiles.json").stat().st_mode & 0o777 == 0o600
+    assert client.post(f"/api/llm/profiles/{pid}/activate", headers=HEADERS).status_code == 200
+    snapshot = app.state.provider.snapshot()
+    from cueloom.control.config_service import ConfigProvider
+    reopened = ConfigProvider(root)
+    assert reopened.profiles_public()["profiles"][0]["active"]
+    assert reopened.snapshot().llm.api_key == "profile-secret-one"
+    remote = TestClient(app, base_url="https://service.example", client=("192.0.2.1", 1234))
+    assert remote.get("/api/llm/profiles").status_code == 401
+    assert snapshot.llm.api_key == "profile-secret-one"
+    assert client.delete(f"/api/llm/profiles/{pid}", headers=HEADERS).status_code == 409
+    assert client.put(f"/api/llm/profiles/{pid}", headers=HEADERS, json={"model": "updated"}).status_code == 200
+    assert snapshot.llm.model == "one"
+    assert not client.get("/api/llm/profiles").json()["profiles"][0]["active"]
+    assert client.post(f"/api/llm/profiles/{pid}/activate", headers=HEADERS).status_code == 200
+    assert app.state.provider.snapshot().llm.model == "updated"
+    assert app.state.provider.snapshot().llm.api_key == "profile-secret-one"
+    second = client.post("/api/llm/profiles/import-current", headers=HEADERS, json={"name": "备份"})
+    assert second.status_code == 201
+    assert "profile-secret-one" not in second.text
+    other = next(p["id"] for p in second.json()["profiles"] if p["id"] != pid)
+    client.post(f"/api/llm/profiles/{other}/activate", headers=HEADERS).raise_for_status()
+    assert client.delete(f"/api/llm/profiles/{pid}", headers=HEADERS).status_code == 200
+    monkeypatch.setenv("CUELOOM_LLM_MODEL", "external")
+    assert client.post(f"/api/llm/profiles/{other}/activate", headers=HEADERS).status_code == 409
+    app.state.provider.reload()
+    assert app.state.provider.snapshot().llm.model == "external"
+
+
+@pytest.mark.parametrize("payload", [
+    {"name": "", "base_url": "https://ok.example", "model": "m"},
+    {"name": "x", "base_url": "https://u:p@host", "model": "m"},
+    {"name": "x", "base_url": "https://ok.example", "model": "m", "api_key": None},
+])
+def test_llm_profiles_validation(backend, payload):
+    _, client, _ = backend
+    assert client.post("/api/llm/profiles", headers=HEADERS, json=payload).status_code == 400
+
+
 def test_unimplemented_settings_not_exposed(backend):
     _, client, _ = backend
     schema = {item["key"] for item in client.get("/api/config").json()["schema"]}

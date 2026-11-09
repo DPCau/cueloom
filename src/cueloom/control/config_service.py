@@ -249,6 +249,97 @@ class ConfigProvider:
             result["overridden_by_env"] = [k for k in changes if self.overridden(k)]
             return result
 
+    def _profiles(self) -> dict:
+        path = self.root / "configs/llm-profiles.json"
+        if path.is_symlink():
+            raise ControlError("invalid_path", "配置方案路径不允许符号链接")
+        if not path.exists():
+            return {"active_id": None, "profiles": {}}
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(data.get("profiles"), dict):
+                raise ValueError()
+            return data
+        except (ValueError, OSError):
+            raise ControlError("invalid_config", "配置方案文件无法读取，请检查本地文件") from None
+
+    def profiles_public(self) -> dict:
+        with self.lock:
+            data = self._profiles()
+            cfg = self.snapshot().llm
+            records = []
+            for pid, item in data["profiles"].items():
+                matches = all(item.get(key, "") == getattr(cfg, key) for key in ("base_url", "model", "api_key"))
+                records.append({"id": pid, "name": item["name"], "base_url": item["base_url"],
+                                "model": item["model"], "api_key_configured": bool(item.get("api_key")),
+                                "selected": pid == data.get("active_id"),
+                                "active": pid == data.get("active_id") and matches})
+            return {"profiles": records, "editable": not self.read_only(),
+                    "switchable": not self.read_only() and not any(
+                        self.overridden(key) for key in ("llm.base_url", "llm.model", "llm.api_key"))}
+
+    def save_profile(self, payload: dict, pid: str | None = None) -> dict:
+        from uuid import uuid4
+        with self.lock:
+            if self.read_only():
+                raise ControlError("read_only_mode", "当前部署的配置只读", 409)
+            data = self._profiles()
+            if pid is not None and pid not in data["profiles"]:
+                raise ControlError("not_found", "配置方案不存在", 404)
+            if set(payload) - {"name", "base_url", "model", "api_key"}:
+                raise ControlError("invalid_key", "配置方案包含不支持的字段")
+            item = dict(data["profiles"].get(pid, {}))
+            item.update(payload)
+            for key in ("name", "base_url", "model", "api_key"):
+                value = item.get(key, "")
+                if not isinstance(value, str) or len(value) > 4096 or any(ord(c) < 32 or ord(c) == 127 for c in value):
+                    raise ControlError("invalid_config", "配置方案字段类型或字符无效")
+                item[key] = value if key == "api_key" else value.strip()
+            if not item["name"] or len(item["name"]) > 80 or not item["model"] or len(item["model"]) > 256:
+                raise ControlError("invalid_config", "方案名称和模型名称不能为空或过长")
+            try:
+                url = urlsplit(item["base_url"])
+                _ = url.port
+                valid = url.scheme in {"http", "https"} and url.hostname and not (
+                    url.username or url.password or url.query or url.fragment or
+                    url.path.rstrip("/").endswith("/chat/completions"))
+            except ValueError:
+                valid = False
+            if not valid:
+                raise ControlError("invalid_config", "请填写不含凭证的 HTTP(S) API 根地址")
+            if any(p["name"] == item["name"] and other != pid for other, p in data["profiles"].items()):
+                raise ControlError("conflict", "配置方案名称已存在", 409)
+            pid = pid or uuid4().hex
+            data["profiles"][pid] = item
+            atomic_write(self.root / "configs/llm-profiles.json", json.dumps(data, ensure_ascii=False, indent=2))
+            return self.profiles_public()
+
+    def activate_profile(self, pid: str) -> dict:
+        with self.lock:
+            if not self.profiles_public()["switchable"]:
+                raise ControlError("read_only_mode", "配置只读或被环境变量覆盖，无法切换方案", 409)
+            data = self._profiles()
+            item = data["profiles"].get(pid)
+            if item is None:
+                raise ControlError("not_found", "配置方案不存在", 404)
+            self.save({"llm": {key: item[key] for key in ("base_url", "model", "api_key")}})
+            data["active_id"] = pid
+            atomic_write(self.root / "configs/llm-profiles.json", json.dumps(data, ensure_ascii=False, indent=2))
+            return self.profiles_public()
+
+    def delete_profile(self, pid: str) -> dict:
+        with self.lock:
+            if self.read_only():
+                raise ControlError("read_only_mode", "当前部署的配置只读", 409)
+            data = self._profiles()
+            if pid not in data["profiles"]:
+                raise ControlError("not_found", "配置方案不存在", 404)
+            if data.get("active_id") == pid:
+                raise ControlError("conflict", "请先启用其他方案，再删除此方案", 409)
+            del data["profiles"][pid]
+            atomic_write(self.root / "configs/llm-profiles.json", json.dumps(data, ensure_ascii=False, indent=2))
+            return self.profiles_public()
+
     def web_token(self) -> str:
         values = dotenv_values(self.root / ".env", interpolate=False)
         return os.environ.get("CUELOOM_WEB_TOKEN", values.get("CUELOOM_WEB_TOKEN") or "")

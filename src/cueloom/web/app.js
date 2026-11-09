@@ -1,7 +1,7 @@
 import {request, setToken} from './api.js';
 import {$, el, kv, action, notice, report} from './ui.js';
 import {initJobs, refreshJobs} from './jobs.js';
-import {initConfig, loadConfig} from './config.js';
+import {initConfig, loadConfig, loadProfiles} from './config.js';
 import {initModels, refreshModels, pollModelTasks} from './models.js';
 const pages = ['overview','run','config','api','models','jobs'];
 let authenticated = false;
@@ -75,6 +75,7 @@ async function route() {
   if (!authenticated) return;
   try {
     if (page === 'config') await loadConfig();
+    if (page === 'api') await loadProfiles();
     if (page === 'models') { await loadConfig(); await refreshModels(true); }
     if (page === 'jobs' || page === 'run') await refresh();
   } catch (error) { report(error); }
