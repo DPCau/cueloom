@@ -15,8 +15,9 @@ dist/
 .coverage
 htmlcov/
 
-# 模型权重与运行产物（体积大 / 可再生）
-models/
+# 模型资产目录（U-7：与项目在一起）；权重全部忽略，只放行目录说明文件
+models/*
+!models/README.md
 *.bin
 *.gguf
 *.pt

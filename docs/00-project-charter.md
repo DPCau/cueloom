@@ -88,7 +88,7 @@
 - Python 3.11+；依赖用 `uv` 管理：`uv sync`、`uv run cueloom ...`。
 - 服务统一由 `./ctl.sh` 菜单启停（不传复杂参数）；环境变量集中放 `.env`（由 `.env.example` 复制，不入库）；详见 `09`。
 - 不做全局 pip 安装；不引入 conda。
-- 模型权重放 `models/`（已 gitignore），首次运行按需下载并校验 hash。
+- 模型权重放项目内 `models/`（已 gitignore），**不放 `~/.cache/huggingface` 等系统目录**；首次运行按需下载并校验完整性。模型资产布局与「查看 / 下载 / 删除」工作台见 `10`（U-7~U-10，2026-11-09 追加，代码待 M0.6）。
 - 密钥只从环境变量或 `configs/local.yaml`（已 gitignore）读取，不写进代码或文档。
 - 日志默认 INFO，可用 `--verbose` 打开 DEBUG；日志中禁止打印完整字幕正文与 API key。
 

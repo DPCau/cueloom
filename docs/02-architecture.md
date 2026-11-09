@@ -76,7 +76,7 @@ cueloom/
     unit/  integration/
   work/                       # 中间产物（gitignore）
   out/                        # 最终字幕（gitignore）
-  models/                     # 模型权重（gitignore）
+  models/                     # 模型资产根（项目内，gitignore）；布局与工作台见 10
   .agents/blackboard.md       # 协同黑板（gitignore）
 ```
 
@@ -95,6 +95,7 @@ cueloom/
 | 可选 | `langdetect` / `fasttext` | 语言检测、译文语种校验 | |
 | 核心（由 M3 提前，见 §10） | `fastapi` / `uvicorn` | 服务层与零构建看板 | 框架阶段即装 |
 | 核心 | `python-dotenv` | 读 `.env` | 不引 pydantic-settings，保持轻量 |
+| 模型工作台（M0.6 设计，未装） | `huggingface_hub` | 从 Hub 下载模型快照到项目内 `models/` | 仅下载时需要；流水线加载本地目录不依赖它，见 `10 §3` |
 | 开发 | `pytest` / `ruff` | 测试与静态检查 | |
 
 **依赖红线**：不引入 Streamlit / Gradio / PySide / yt-dlp / TTS 相关包 / FFmpeg 二进制依赖。

@@ -3,6 +3,8 @@
 > 新增于 2026-11-08 00:46 的项目会话。本文件落地用户追加的 U-1 ~ U-6 目标。
 > 与既有文档的关系：**数据面契约仍以 `03` 为准**；本文件只定义「运维形态」（怎么启动、怎么观测、怎么部署）。
 > 若 `00` 的非目标、`02` 的架构件、`07` 的 ADR 与本文件冲突，以本文件 + `07` 新增 ADR 为准，旧条目标记 Superseded，不改写历史结论。
+>
+> **2026-11-09 修订（U-7~U-10，完整设计见 `10`）**：§1 目标表新增 U-7~U-10；§4「看板只读」与 §5「写操作留 M3」是否放宽取决于 D-16（方案 A 下保持不变）；§7 的模型挂载改为 `./models` bind mount，原分句由 ADR-012 取代；§8 忽略规则改为 `models/*` + 放行 `README.md`；新增待决项与风险见 `10 §12` 与 `07`。模型目录、识别 / 下载 / 删除以 `10` 为准。
 
 ## 1. 新增目标与不变红线
 
@@ -14,6 +16,10 @@
 | U-4 | 每次操作完，只要有新工作区文件未追踪，就提交推送一次 | 阶段粒度提交：设计 / 环境 / 框架 / 验证各一次，见 §8 |
 | U-5 | 甚至可以 Docker 部署 | `Dockerfile` + `docker-compose.yml` + `.dockerignore`，见 §7 |
 | U-6 | 不把 Docker 产物放到本机里；测试后若开启服务必须及时关闭 | 框架阶段不 build / 不 up；本地冒烟后立即 stop 并校验端口释放，见 §9 |
+| U-7 | 模型目录与项目目录在一起，不放系统目录 | `<root>/models/` 唯一资产根；显式本地路径加载，见 `10` |
+| U-8 | 软件自动识别该目录下已有模型 | 扫描 + 四态完整性判定 + manifest，见 `10 §6` |
+| U-9 | 一键下载 / 删除 / 查看的模型工作台 | `ctl.sh` 菜单 10 + 看板模型卡片，见 `10 §7`~`§9` |
+| U-10 | 不改变纯数字菜单、零构建、无复杂参数 | 工作台沿用既有交互范式 |
 
 **不变红线（不得借「做看板」放宽）**：
 
@@ -134,22 +140,22 @@ ctl.sh 菜单选择 > 环境变量 / .env > configs/local.yaml（忽略） > con
 
 - `Dockerfile`：基于 `ghcr.io/astral-sh/uv` 官方镜像，先复制 `pyproject.toml` / `uv.lock` 做依赖层缓存，再复制源码；`uv sync --frozen`；非 root 用户；`CMD` 启动 uvicorn。
 - `docker-compose.yml`：单服务，`env_file: .env`（本机存在、不入库），`ports` 由 `CUELOOM_HOST` / `CUELOOM_PORT` 控制；`healthcheck` 打 `/api/health`。
-- **产物隔离**：`work/` 与 `out/` 用 Docker **named volume**（由引擎管理），不 bind mount 项目目录；模型权重同样放 named volume。本机项目目录因此不产生任何 Docker 运行产物。
+- **产物隔离（2026-11-09 修订，见 `10 §11` / ADR-012）**：`work/` 与 `out/` 仍用 Docker **named volume**；**模型权重改为 `./models:/app/models` 的 bind mount**，使容器内与本机共用同一批项目内模型资产（U-7）。U-6 禁止的是镜像 / 容器 / 构建缓存 / 卷等 Docker 产物落进工作区，模型是用户主动下载的资产，不属此类；但容器内下载会写回本机 `models/`，菜单 7 必须提示。是否改用 named volume 留 D-17，两种模式不可同时启用。
 - `.dockerignore`：排除 `.git/`、`.venv/`、`work/`、`out/`、`models/`、`.env`、`.agents/`、`.workbuddy/`、`*.log`、`*.tar`，避免把密钥与本机产物打进构建上下文或镜像。
 - **U-6 执行约定**：框架阶段**只提交上述配置文件，不执行 `docker build` / `docker compose up`**，避免本机留下镜像、构建缓存与容器。`ctl.sh` 菜单 7 会在真正构建前二次确认，并把 `down` 与 `up` 成对提供；测试结束必须 `down`。
 - 镜像是否推送 registry、何时构建，登记为 D-12，未确认前不执行。
 
 ## 8. 忽略与阶段提交约定（U-4）
 
-必须忽略（`.gitignore`）：`.venv/`、`uv` 缓存、`__pycache__/`、`.pytest_cache/`、`.ruff_cache/`、`work/`、`out/`、`models/`、`.env`、`.env.*`（除 `.env.example`）、`configs/local.yaml`、`*.log`、`*.tar`、`docker-compose.override.yml`、`.docker/`、`.agents/blackboard.md`、`.workbuddy/`、`.DS_Store`。
+必须忽略（`.gitignore`）：`.venv/`、`uv` 缓存、`__pycache__/`、`.pytest_cache/`、`.ruff_cache/`、`work/`、`out/`、**`models/*`（例外放行 `!models/README.md`）**、`.env`、`.env.*`（除 `.env.example`）、`configs/local.yaml`、`*.log`、`*.tar`、`docker-compose.override.yml`、`.docker/`、`.agents/blackboard.md`、`.workbuddy/`、`.DS_Store`。模型权重另有 `*.bin` / `*.safetensors` / `*.gguf` / `*.onnx` / `*.pt` 全局忽略做双保险（U-7 / R-13）。
 
-必须提交：`pyproject.toml`、`uv.lock`、`ctl.sh`、`Dockerfile`、`docker-compose.yml`、`.dockerignore`、`.env.example`、`configs/default.yaml` 与 prompt / glossary 模板、`src/`、`tests/`、`docs/`。
+必须提交：`pyproject.toml`、`uv.lock`、`ctl.sh`、`Dockerfile`、`docker-compose.yml`、`.dockerignore`、`.env.example`、`configs/default.yaml` 与 prompt / glossary 模板、`configs/model-catalog.yaml`（M0.6）、`src/`、`tests/`、`docs/`、**`models/README.md`**。
 
-**U-4 执行规则**：每完成一个阶段（设计 / 环境 / 框架 / 验证）立即 `git status`；只要出现新文件或未追踪产物，就 `git add` + `commit` + `git push` 一次。提交信息写清阶段；密钥、本机产物、黑板不得进入提交。
+**U-4 执行规则**：每完成一个阶段（设计 / 环境 / 框架 / 验证）立即 `git status`；只要出现新文件或未追踪产物，就 `git add` + `commit` + `git push` 一次。提交信息写清阶段；密钥、本机产物、模型权重、黑板不得进入提交。
 
 ## 9. 测试与关闭约定（U-6）
 
-1. `uv sync` + `uv run pytest` 最小测试（单测不加载模型、不访问真实 LLM）。
+1. `uv sync` + `uv run pytest` 最小测试（单测不加载模型、不访问真实 LLM、**不下载真实权重**；模型工作台测试用小型假模型目录，见 `10 §13`）。
 2. 本地启动 uvicorn → `curl /api/health` 与 `/` → 查看看板返回 200 → **立即停止**，确认 PID 文件删除、端口不再监听。
 3. 不启动 Docker，不构建镜像；如用户日后要求 Docker 实测，必须先说明会产生的引擎侧产物，测完 `docker compose down -v` 并清理镜像，且不在本机项目目录留下任何文件。
 4. 每次测试结论按协同规范单行追加 `.agents/blackboard.md`；黑板不进 git。
@@ -162,3 +168,9 @@ ctl.sh 菜单选择 > 环境变量 / .env > configs/local.yaml（忽略） > con
 | D-12 | Docker 镜像是否发布到 registry、何时构建 | 未确认前只提交配置，不 build / 不 push | 部署流程、U-6 |
 | D-13 | 看板是否需要触发任务 / 取消任务 | 一期只读，写操作留 M3 | API 契约 |
 | D-14 | `ctl.sh` 是否需要非交互模式供 CI 使用 | 暂不需要；如需要只加一个 `status` 子命令，不引入参数体系 | 控制面 |
+| D-15 | `models/` 是否保留占位说明 | 是，`models/README.md` 入库 | 目录骨架 |
+| D-16 | 模型工作台用方案 A 还是 B | 先 A（控制台操作 + 看板只读），确认后再叠加 B | ADR-010、写接口 |
+| D-17 | Docker 模型用 bind mount 还是 named volume | 建议 `./models` bind mount | compose、U-6 语义 |
+| D-18 | 是否支持自定义 / 私有模型与 HF token | 一期不支持，手工放入的标 `unmanaged` | 注册表、删除白名单 |
+
+D-15~D-18 的完整背景与取舍见 `10 §12`；统一登记在 `07 §4`。
