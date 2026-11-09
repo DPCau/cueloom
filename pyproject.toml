@@ -22,6 +22,7 @@ dependencies = [
 
 [project.optional-dependencies]
 asr = ["faster-whisper>=1.0"]
+models = ["huggingface_hub>=0.24,<2"]
 dev = ["pytest>=8.0", "ruff>=0.6"]
 
 # 许可证未定（D-01）：不写 license 字段、不创建 LICENSE 文件。

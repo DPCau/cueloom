@@ -16,6 +16,7 @@ def test_end_to_end_pipeline() -> None:
 
     with tempfile.TemporaryDirectory() as tmpdir:
         cfg = load_config()
+        cfg.raw.setdefault("asr", {})["backend"] = "mock"
         cfg.work_dir = Path(tmpdir) / "work"
         cfg.out_dir = Path(tmpdir) / "out"
 

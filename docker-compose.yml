@@ -1,17 +1,27 @@
-# Requires a local .env (copied from .env.example by ctl.sh menu 6); .env is gitignored.
-# Volumes are Docker named volumes: no artifacts are written into this project directory.
+# 由 ctl.sh 菜单 6 创建 .env；禁止提交密钥。
+# 模型保存在宿主 ./models；任务、产物与上传素材使用 named volume。
 services:
   cueloom:
     build: .
     image: cueloom:local
     env_file:
       - .env
+    environment:
+      CUELOOM_HOST: "0.0.0.0"
+      CUELOOM_PORT: "8000"
+      CUELOOM_CONFIG_READ_ONLY: "1"
+      CUELOOM_WORK_DIR: /app/work
+      CUELOOM_OUT_DIR: /app/out
+    # app 校验强 token；Docker 转发来源不享受本机免登录。
+    # 非本机访问仍须 HTTPS 或受信安全隧道，不信任代理声明。
+    command: ["python", "-m", "uvicorn", "cueloom.server:app", "--host", "0.0.0.0", "--port", "8000", "--no-proxy-headers"]
     ports:
       - "127.0.0.1:${CUELOOM_PORT:-8000}:8000"
     volumes:
       - cueloom-work:/app/work
       - cueloom-out:/app/out
-      - cueloom-models:/app/models
+      - ./models:/app/models
+      - cueloom-inbox:/app/inbox
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
       interval: 30s
@@ -22,4 +32,4 @@ services:
 volumes:
   cueloom-work:
   cueloom-out:
-  cueloom-models:
+  cueloom-inbox:

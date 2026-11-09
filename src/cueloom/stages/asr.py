@@ -13,6 +13,7 @@ from typing import Protocol
 from cueloom.config import Config
 from cueloom.io.jsonl import write_jsonl
 from cueloom.models import AsrSegment, Job, StageResult
+from cueloom.model_manager import ModelManager
 
 
 class AsrBackend(Protocol):
@@ -36,7 +37,8 @@ class FasterWhisperBackend:
             ) from exc
 
         asr_cfg = cfg.raw.get("asr", {}) or {}
-        model_name = asr_cfg.get("model", "large-v3")
+        model_id = asr_cfg.get("model", "faster-whisper-large-v3")
+        local_dir = ModelManager(cfg.root).resolve_model_path(model_id)
         device = asr_cfg.get("device", "auto")
         compute_type = asr_cfg.get("compute_type", "int8_float16")
         vad_filter = asr_cfg.get("vad_filter", True)
@@ -48,7 +50,7 @@ class FasterWhisperBackend:
             device = "cpu"
             compute_type = "int8"
 
-        model = WhisperModel(model_name, device=device, compute_type=compute_type)
+        model = WhisperModel(str(local_dir), local_files_only=True, device=device, compute_type=compute_type)
         vad_params = dict(min_silence_duration_ms=min_silence, speech_pad_ms=speech_pad)
         segments_gen, info = model.transcribe(
             str(audio),
@@ -148,12 +150,7 @@ def get_backend(cfg: Config) -> AsrBackend:
     if name == "mock":
         return MockAsrBackend()
     if name == "faster-whisper":
-        try:
-            import faster_whisper  # noqa: F401
-            return FasterWhisperBackend()
-        except ImportError:
-            # Gracefully fall back to mock if faster-whisper not installed
-            return MockAsrBackend()
+        return FasterWhisperBackend()
     raise ValueError(f"unsupported asr backend: {name}")
 
 
@@ -175,6 +172,8 @@ def run(job: Job, cfg: Config) -> StageResult:
     asr_cfg = cfg.raw.get("asr", {}) or {}
     blacklist = asr_cfg.get("hallucination_blacklist", [])
     segments, warnings = filter_hallucinations(raw_segments, blacklist)
+    if asr_cfg.get("backend", "faster-whisper").lower() == "mock":
+        warnings.append("asr_mock_fallback: 已显式启用 mock，结果不是真实语音识别")
 
     work_job = cfg.work_dir / job.job_id
     work_job.mkdir(parents=True, exist_ok=True)

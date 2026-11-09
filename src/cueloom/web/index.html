@@ -1,118 +1,49 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CueLoom 控制台</title>
-<style>
-:root{color-scheme:dark light;--bg:#101317;--panel:#181c22;--panel2:#1f242c;--text:#e8ecf2;--muted:#98a2b3;--line:#2c333d;--ok:#4ade80;--bad:#f87171;--accent:#7aa2f7}
-@media (prefers-color-scheme:light){:root{--bg:#f6f7f9;--panel:#ffffff;--panel2:#f0f2f5;--text:#1b1f26;--muted:#5b6472;--line:#dde2e8;--ok:#16a34a;--bad:#dc2626;--accent:#2563eb}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;padding:24px}
-.wrap{max-width:1080px;margin:0 auto}
-header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:20px}
-h1{font-size:20px;font-weight:600;margin:0;letter-spacing:.5px}
-.sub{color:var(--muted);font-size:13px}
-.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--bad);margin-right:6px}
-.dot.on{background:var(--ok)}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:18px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
-.card h2{font-size:13px;font-weight:600;margin:0 0 12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
-.kv{display:flex;justify-content:space-between;gap:12px;padding:3px 0;font-size:13px}
-.kv span:first-child{color:var(--muted)}
-.kv span:last-child{text-align:right;word-break:break-all}
-.pill{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);font-size:12px}
-table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px}
-th{color:var(--muted);font-weight:500;background:var(--panel2)}
-tr:last-child td{border-bottom:none}
-.empty{color:var(--muted);padding:18px 14px}
-footer{margin-top:16px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.err{color:var(--bad)}
-a{color:var(--accent)}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>CueLoom · 字幕工作台</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script type="module" src="/static/app.js"></script>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1><span id="dot" class="dot"></span>CueLoom 控制台</h1>
-    <span class="sub" id="headline">正在连接服务…</span>
-  </header>
-
-  <div class="grid">
-    <div class="card"><h2>服务</h2><div id="service"></div></div>
-    <div class="card"><h2>自有 LLM</h2><div id="llm"></div></div>
-    <div class="card"><h2>识别与断句</h2><div id="pipeline"></div></div>
-    <div class="card"><h2>输出与路径</h2><div id="output"></div></div>
+  <aside class="sidebar">
+    <a class="brand" href="#overview"><span class="brand-mark">C</span><span>CueLoom<small>字幕制作工作台</small></span></a>
+    <div class="nav-label">工作空间</div>
+    <nav aria-label="主导航">
+      <a href="#overview"><span>01</span>概览</a>
+      <a href="#run"><span>02</span>运行</a>
+      <a href="#config"><span>03</span>配置</a>
+      <a href="#api"><span>04</span>API</a>
+      <a href="#models"><span>05</span>模型</a>
+      <a href="#jobs"><span>06</span>任务产物</a>
+    </nav>
+    <div class="sidebar-foot"><span class="eyebrow">LOCAL FIRST</span><p>从声音到字幕<br>让每一句，都清晰呈现。</p><small>原生前端 · 同源连接</small></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><div><span id="connection" class="badge">正在连接</span><span id="auth-state" class="muted">核验访问权限…</span></div><div class="actions"><label class="theme-label">主题 <select id="theme" aria-label="界面主题"><option value="system">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label><button id="auth-open" class="quiet">访问认证</button></div></header>
+    <main>
+      <div id="notice" class="notice" role="alert" hidden><span id="notice-text"></span><button id="notice-close" class="quiet" aria-label="关闭通知">关闭</button></div>
+      <section id="page-overview" class="page" aria-labelledby="title-overview">
+        <div class="page-heading"><div><span class="eyebrow">WORKSPACE / OVERVIEW</span><h1 id="title-overview">创作，从这里开始。</h1><p>一站式管理识别、翻译与字幕交付。</p></div><a class="button primary" href="#run">新建字幕任务 →</a></div>
+        <div class="metrics" id="overview-metrics"></div>
+        <div class="two-column"><article class="card"><div class="card-heading"><h2>工作流</h2><span class="badge">五阶段流水线</span></div><div class="workflow"><div><b>01</b><strong>语音识别</strong><small>本地 ASR</small></div><div><b>02</b><strong>智能断句</strong><small>阅读节奏</small></div><div><b>03</b><strong>语义翻译</strong><small>自有 LLM</small></div><div><b>04</b><strong>质量检查</strong><small>字幕规范</small></div><div><b>05</b><strong>产物导出</strong><small>SRT / VTT / ASS</small></div></div><div class="callout">真实任务需要已安装的 ASR 模型与完整 LLM 配置。Demo 使用假文本，仅用于验证流程。</div></article><article class="card"><div class="card-heading"><h2>当前环境</h2><a href="#config">管理配置</a></div><div id="environment" class="kv-list"></div></article></div>
+        <article class="card"><div class="card-heading"><h2>最近任务</h2><a href="#jobs">查看全部 →</a></div><div id="recent-jobs"></div></article>
+      </section>
+      <section id="page-run" class="page" hidden aria-labelledby="title-run">
+        <div class="page-heading"><div><span class="eyebrow">WORKSPACE / RUN</span><h1 id="title-run">开始一次字幕制作</h1><p>上传音视频，选择交付方式，后台完成处理。</p></div></div>
+        <div class="two-column"><form id="run-form" class="card"><h2><span class="step-number">1</span>选择素材</h2><label class="dropzone" id="dropzone"><strong>选择或拖入音视频文件</strong><span>MP4、MKV、MOV、WAV、MP3、M4A、FLAC、WEBM、OGG</span><input id="media-file" type="file" accept=".mp4,.mkv,.mov,.wav,.mp3,.m4a,.flac,.webm,.ogg"><span id="file-info">文件仅上传至当前 CueLoom 服务</span></label><div class="upload-row"><button id="upload-button" type="button">上传素材</button><span id="upload-label" class="muted" aria-live="polite">尚未上传</span></div><progress id="upload-progress" max="100" value="0" aria-label="素材上传进度"></progress><h2 class="spaced"><span class="step-number">2</span>设置输出</h2><label class="field">目标语言<input id="target-lang" value="zh-CN" required pattern="[A-Za-z]{2,8}(-[A-Za-z0-9]{2,8})*" placeholder="例如 zh-CN、en、ja"><small>源语言由识别阶段自动检测</small></label><label class="check"><input id="bilingual" type="checkbox" checked>保留原文，生成双语字幕</label><fieldset class="format-options"><legend>字幕格式（至少一种）</legend><label><input type="checkbox" name="format" value="srt" checked>SRT</label><label><input type="checkbox" name="format" value="vtt">VTT</label><label><input type="checkbox" name="format" value="ass">ASS</label></fieldset><button id="submit-job" class="primary" type="submit">创建真实任务 →</button><p class="muted">使用已上传素材与当前配置；同一时间仅运行一个流水线。</p></form>
+        <div class="stack"><article class="card demo-card"><span class="eyebrow">独立演示模式</span><h2>先体验完整流程</h2><p>Demo 使用内置素材、Mock ASR 与 Mock LLM，生成的是假文本，<strong>不是真实语音识别或翻译</strong>，也不会使用你上传的文件。</p><button id="demo-button">运行 Demo（假文本）</button></article><article class="card"><div class="card-heading"><h2>当前运行</h2><span class="badge">自动刷新</span></div><div id="active-job" class="empty">正在读取运行状态…</div></article></div></div>
+      </section>
+      <section id="page-config" class="page" hidden aria-labelledby="title-config"><div class="page-heading"><div><span class="eyebrow">WORKSPACE / CONFIGURATION</span><h1 id="title-config">配置工作流</h1><p>根据后端 schema 生成；只提交你修改的字段。</p></div><button id="config-reload">从磁盘重新加载</button></div><div id="config-note" class="callout"></div><form id="config-form"><div id="config-fields" class="config-grid"></div><div class="savebar"><span>修改仅对下一次任务生效，运行中任务使用配置快照。</span><button id="config-save" type="submit" class="primary">保存配置</button></div></form></section>
+      <section id="page-api" class="page" hidden aria-labelledby="title-api"><div class="page-heading"><div><span class="eyebrow">WORKSPACE / API</span><h1 id="title-api">连接与 API</h1><p>同源服务、远端认证与语言模型连接诊断。</p></div></div><div class="two-column"><article class="card"><h2>访问认证</h2><div id="api-auth" class="kv-list"></div><p>本机回环访问由后端自动认证。远端需 HTTPS 与 Bearer token；token 仅保存在本标签页 sessionStorage，不写入 URL。</p><button id="api-login">管理访问 token</button></article><article class="card"><h2>LLM 连接检查</h2><p>向当前配置的模型发起实际探活请求，不会创建字幕任务。两次探活至少间隔 5 秒。</p><button id="probe-button" class="primary">测试 LLM 连接</button><div id="probe-result" class="callout" aria-live="polite">尚未测试</div></article></div><article class="card"><h2>接口约定</h2><div id="api-contracts" class="endpoint-list"></div><div class="callout">写请求统一携带 X-Cueloom-Client: web。下载通过带认证的 fetch 获取 Blob，不在链接中暴露 token。</div></article></section>
+      <section id="page-models" class="page" hidden aria-labelledby="title-models"><div class="page-heading"><div><span class="eyebrow">WORKSPACE / MODELS</span><h1 id="title-models">本地模型资产</h1><p>显式下载、完整性检查与默认识别模型管理。</p></div><button id="models-rescan">重新扫描</button></div><div class="callout">下载仅在点击后发生。软删除将文件移入服务端 models/.trash，不立即释放磁盘空间。完整、受支持的 ASR 模型才能设为默认。</div><div id="model-tasks" class="stack" aria-live="polite"></div><div id="model-list" class="model-grid"></div></section>
+      <section id="page-jobs" class="page" hidden aria-labelledby="title-jobs"><div class="page-heading"><div><span class="eyebrow">WORKSPACE / DELIVERABLES</span><h1 id="title-jobs">任务与产物</h1><p>追踪每一阶段，下载已生成的字幕。</p></div><button id="jobs-refresh">刷新任务</button></div><div class="jobs-layout"><article class="card"><h2>任务记录</h2><div id="jobs-list"></div></article><article class="card"><div class="card-heading"><h2>任务详情</h2><span class="badge">自动刷新</span></div><div id="job-detail" class="empty">选择一条任务查看详情与字幕产物。</div></article></div></section>
+      <footer><span>CueLoom / 字幕制作工作台</span><span id="last-updated">等待同步</span></footer>
+    </main>
   </div>
-
-  <table>
-    <thead><tr><th>Job ID</th><th>状态</th><th>阶段</th><th>源语言</th><th>目标语言</th><th>创建时间</th></tr></thead>
-    <tbody id="jobs"><tr><td class="empty" colspan="6">加载中…</td></tr></tbody>
-  </table>
-
-  <footer>
-    <span>只读看板 · 每 <span id="refresh">5</span> 秒刷新 · 不提供写操作</span>
-    <span id="updated">—</span>
-  </footer>
-</div>
-<script>
-const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
-const kv = (k, v) => `<div class="kv"><span>${esc(k)}</span><span>${esc(v)}</span></div>`;
-const bool = (v) => v ? "是" : "否";
-
-function render(health, status, jobs) {
-  $("dot").className = health.ok ? "dot on" : "dot";
-  $("headline").textContent = health.ok
-    ? `运行正常 · v${health.version} · 已运行 ${Math.round(health.uptime_sec)} 秒`
-    : "服务不可用";
-  const c = status.config || {};
-  const s = c.service || {}, l = c.llm || {}, a = c.asr || {}, al = c.align || {}, sg = c.segment || {}, o = c.output || {}, p = c.paths || {};
-  $("refresh").textContent = s.dashboard_refresh_sec || 5;
-  $("service").innerHTML =
-    kv("监听地址", `${s.host || "-"}:${s.port || "-"}`) +
-    kv("日志级别", s.log_level || "-") +
-    kv("Job 数", status.jobs_count ?? "-") +
-    kv("流水线", status.pipeline && status.pipeline.implemented ? "可用" : "M1 待实现");
-  $("llm").innerHTML =
-    kv("端点", l.base_url || "未配置") +
-    kv("模型", l.model || "未配置") +
-    kv("密钥", l.api_key_configured ? "已配置" : "未配置") +
-    kv("配置完整", `<span class="pill">${bool(l.configured)}</span>`) +
-    kv("并发 / 缓存", `${l.max_concurrency ?? "-"} / ${bool(l.cache)}`) +
-    kv("反思轮", bool(l.reflection)) +
-    kv("探活", status.llm_probe || "-");
-  $("pipeline").innerHTML =
-    kv("ASR 后端", a.backend || "-") +
-    kv("ASR 模型", a.model || "-") +
-    kv("对齐后端", al.backend || "-") +
-    kv("CPS 范围", `${sg.min_cps ?? "-"}–${sg.max_cps ?? "-"} 字/秒`) +
-    kv("LLM 辅助断句", bool(sg.llm_assist));
-  $("output").innerHTML =
-    kv("格式", (o.formats || []).join(", ") || "-") +
-    kv("双语", bool(o.bilingual)) +
-    kv("work", p.work || "-") +
-    kv("out", p.out || "-");
-  const rows = (jobs || []).map((j) => `<tr><td>${esc(j.job_id)}</td><td>${esc(j.status)}</td><td>${esc(j.stage || "-")}</td><td>${esc(j.source_lang || "自动")}</td><td>${esc(j.target_lang || "-")}</td><td>${esc(j.created_at || "-")}</td></tr>`).join("");
-  $("jobs").innerHTML = rows || `<tr><td class="empty" colspan="6">暂无 job 记录。运行流水线后，work/&lt;job_id&gt;/job.json 会出现在这里。</td></tr>`;
-  $("updated").textContent = `最后更新 ${new Date().toLocaleTimeString()}`;
-}
-
-async function refresh() {
-  try {
-    const [h, st, jb] = await Promise.all([
-      fetch("/api/health").then((r) => r.json()),
-      fetch("/api/status").then((r) => r.json()),
-      fetch("/api/jobs").then((r) => r.json())
-    ]);
-    render(h, st, jb);
-  } catch (e) {
-    $("dot").className = "dot";
-    $("headline").innerHTML = `<span class="err">连接失败：${esc(e.message)}</span>`;
-  }
-}
-refresh();
-setInterval(refresh, 5000);
-</script>
+  <dialog id="auth-dialog"><form id="auth-form"><div class="card-heading"><h2>连接工作台</h2><button type="button" id="auth-close" class="quiet">关闭</button></div><p>本机自动认证；远程访问请输入服务端 CUELOOM_WEB_TOKEN，并使用 HTTPS 或回环安全隧道。</p><label class="field">访问 token<input id="auth-token" type="password" autocomplete="off" spellcheck="false" placeholder="输入访问 token"></label><p id="auth-error" class="error-text" role="alert"></p><div class="actions"><button type="button" id="auth-clear">清除本页 token</button><button type="submit" class="primary">验证并连接</button></div><small class="muted">仅保存于当前标签页会话，不读取或回显已保存的 token。</small></form></dialog>
 </body>
 </html>

@@ -157,7 +157,7 @@ def translate_cues(
 
     translated_records: list[dict] = []
     uncached_cues: list[Cue] = []
-    cue_map: dict[int, Cue] = {c.id: c for c in cues}
+    cue_positions = {c.id: index for index, c in enumerate(cues)}
 
     # Step 1: Check cache
     for cue in cues:
@@ -194,10 +194,11 @@ def translate_cues(
     batches = build_batches(uncached_cues, cfg)
     for b_idx, batch in enumerate(batches):
         # Determine context before and after
-        first_id = batch[0].id
-        last_id = batch[-1].id
-        ctx_before = [cue_map[i].text for i in range(max(0, first_id - 3), first_id)]
-        ctx_after = [cue_map[i].text for i in range(last_id + 1, min(len(cues), last_id + 4))]
+        first_pos = cue_positions[batch[0].id]
+        last_pos = cue_positions[batch[-1].id]
+        window = cfg.llm.context_window
+        ctx_before = [c.text for c in cues[max(0, first_pos - window):first_pos]]
+        ctx_after = [c.text for c in cues[last_pos + 1:last_pos + 1 + window]]
 
         glossary_payload = [g.model_dump(mode="json") for g in glossary]
         payload = {

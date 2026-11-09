@@ -17,6 +17,7 @@ def test_timecode_invariance_across_all_stages() -> None:
 
     with tempfile.TemporaryDirectory() as tmpdir:
         cfg = load_config()
+        cfg.raw.setdefault("asr", {})["backend"] = "mock"
         cfg.work_dir = Path(tmpdir) / "work"
         cfg.out_dir = Path(tmpdir) / "out"
 

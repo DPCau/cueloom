@@ -11,6 +11,33 @@ from cueloom.models import Cue, GlossaryEntry, Job
 from cueloom.stages.translate import build_batches, translate_cues
 
 
+def test_context_window_with_noncontiguous_ids(tmp_path, monkeypatch) -> None:
+    from cueloom.stages import translate
+
+    cfg = load_config()
+    cfg.work_dir = tmp_path
+    cfg.llm.cache = False
+    cfg.llm.batch_max_items = 1
+    captured = []
+
+    class Client:
+        def complete_json(self, system, payload, schema):
+            captured.append(payload)
+            return {"items": payload["items"]}
+
+    monkeypatch.setattr(translate, "_get_client", lambda _: Client())
+    cues = [Cue(id=i, start=n, end=n + 1, text=str(i)) for n, i in enumerate((10, 30, 50))]
+    job = Job(job_id="context", input_path="demo.wav", target_lang="zh-CN")
+    cfg.llm.context_window = 1
+    translate_cues(cues, [], cfg, job)
+    assert captured[1]["context_before"] == ["10"]
+    assert captured[1]["context_after"] == ["50"]
+    captured.clear()
+    cfg.llm.context_window = 0
+    translate_cues(cues, [], cfg, job)
+    assert all(not p["context_before"] and not p["context_after"] for p in captured)
+
+
 def test_cache_key_invalidation() -> None:
     k1 = cache_key("m1", "p1", "g1", "en", "zh-CN", "hello")
     k2 = cache_key("m1", "p1", "g1", "en", "zh-CN", "hello")

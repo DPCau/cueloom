@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from cueloom.server import app
 
-client = TestClient(app)
+client = TestClient(app, base_url="http://127.0.0.1", client=("127.0.0.1", 50000))
 
 
 def test_health() -> None:
@@ -23,7 +23,8 @@ def test_dashboard_is_served() -> None:
     response = client.get("/")
     assert response.status_code == 200
     assert "CueLoom" in response.text
-    assert "/api/status" in response.text
+    assert "/static/app.js" in response.text
+    assert client.get("/static/app.js").status_code == 200
 
 
 def test_status_is_redacted() -> None:

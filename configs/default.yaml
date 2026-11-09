@@ -1,6 +1,6 @@
 asr:
-  backend: faster-whisper       # faster-whisper | qwen3-asr | funasr
-  model: large-v3
+  backend: faster-whisper       # faster-whisper | mock（仅测试）
+  model: faster-whisper-large-v3
   device: auto                  # auto | cuda | cpu
   compute_type: int8_float16
   vad_filter: true
@@ -9,8 +9,7 @@ asr:
   condition_on_previous_text: false
   hallucination_blacklist: ["thanks for watching", "subscribe", "字幕由"]
 align:
-  backend: qwen3-forced-aligner # qwen3-forced-aligner | whisperx | none
-  model: Qwen3-ForcedAligner-0.6B
+  backend: none                 # 强制对齐适配器尚未实现
 segment:
   max_cps: 17                   # 中文 characters per second
   min_cps: 12

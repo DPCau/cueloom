@@ -152,12 +152,16 @@ dev = [
     { name = "pytest" },
     { name = "ruff" },
 ]
+models = [
+    { name = "huggingface-hub" },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
     { name = "faster-whisper", marker = "extra == 'asr'", specifier = ">=1.0" },
     { name = "httpx", specifier = ">=0.27" },
+    { name = "huggingface-hub", marker = "extra == 'models'", specifier = ">=0.24,<2" },
     { name = "pydantic", specifier = ">=2.7,<3" },
     { name = "pysubs2", specifier = ">=1.8" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
@@ -167,7 +171,7 @@ requires-dist = [
     { name = "typer", specifier = ">=0.12" },
     { name = "uvicorn", specifier = ">=0.30" },
 ]
-provides-extras = ["asr", "dev"]
+provides-extras = ["asr", "models", "dev"]
 
 [[package]]
 name = "fastapi"

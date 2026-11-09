@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -70,9 +72,18 @@ def _save_job_state(work_job_dir: Path, job: Job, results: list[StageResult]) ->
         **job.model_dump(mode="json"),
         "stage_results": [r.model_dump(mode="json") for r in results],
     }
-    (work_job_dir / "job.json").write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    metadata = work_job_dir / "control.json"
+    if metadata.is_file():
+        payload.update(json.loads(metadata.read_text(encoding="utf-8")))
+    fd, name = tempfile.mkstemp(prefix=".job-", dir=work_job_dir)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(json.dumps(payload, ensure_ascii=False, indent=2))
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(name, work_job_dir / "job.json")
+    finally:
+        Path(name).unlink(missing_ok=True)
 
 
 def run(job: Job, cfg: Config, from_stage: str | None = None) -> Job:
@@ -109,11 +120,16 @@ def run(job: Job, cfg: Config, from_stage: str | None = None) -> Job:
 
     for stage_name in STAGES[start_idx:]:
         job.stage = stage_name
+        _save_job_state(work_job, job, results)
         handler = STAGE_DISPATCH[stage_name]
         try:
             result = handler(job, cfg)
         except Exception as exc:
-            result = StageResult(stage=stage_name, ok=False, warnings=[f"{type(exc).__name__}: {exc}"])
+            result = StageResult(stage=stage_name, ok=False, warnings=[type(exc).__name__])
+        if cfg.llm.api_key:
+            result.warnings = [
+                warning.replace(cfg.llm.api_key, "[REDACTED]") for warning in result.warnings
+            ]
 
         results.append(result)
         _save_job_state(work_job, job, results)

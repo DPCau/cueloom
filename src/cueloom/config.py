@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from dotenv import load_dotenv
-from pydantic import BaseModel, Field
+from dotenv import dotenv_values
+from pydantic import BaseModel, Field, PrivateAttr
 
 
 def project_root() -> Path:
@@ -42,9 +42,11 @@ class LlmConfig(BaseModel):
     reflection: bool = False
     cache: bool = True
 
+    _api_key: str = PrivateAttr(default_factory=lambda: os.environ.get("CUELOOM_LLM_API_KEY", ""))
+
     @property
     def api_key(self) -> str:
-        return os.environ.get(self.api_key_env, "")
+        return self._api_key
 
     @property
     def configured(self) -> bool:
@@ -91,7 +93,10 @@ class Config(BaseModel):
                 "min_cps": segment.get("min_cps"),
                 "llm_assist": segment.get("llm_assist", False),
             },
-            "output": {"formats": output.get("formats", ["srt"]), "bilingual": output.get("bilingual", True)},
+            "output": {
+                "formats": output.get("formats", ["srt"]),
+                "bilingual": output.get("bilingual", True),
+            },
             "paths": {"work": str(self.work_dir), "out": str(self.out_dir)},
         }
 
@@ -99,8 +104,11 @@ class Config(BaseModel):
 def load_config(root: Path | None = None) -> Config:
     root = (root or project_root()).resolve()
     env_file = root / ".env"
-    if env_file.exists():
-        load_dotenv(env_file, override=False)
+    values = {**dotenv_values(env_file, interpolate=False), **os.environ}
+
+    def _env(name: str, default: str = "") -> str:
+        value = values.get(name)
+        return default if value is None else value
 
     data: dict[str, Any] = {}
     default_file = root / "configs" / "default.yaml"
@@ -117,6 +125,7 @@ def load_config(root: Path | None = None) -> Config:
     llm.model = _env("CUELOOM_LLM_MODEL", llm.model)
     llm.api_key_env = _env("CUELOOM_LLM_API_KEY_ENV", llm.api_key_env)
     llm.max_concurrency = int(_env("CUELOOM_LLM_CONCURRENCY", str(llm.max_concurrency)))
+    llm._api_key = _env(llm.api_key_env)
 
     server = data.get("server", {}) or {}
     work = Path(_env("CUELOOM_WORK_DIR", "work"))

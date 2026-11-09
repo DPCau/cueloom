@@ -1,0 +1,41 @@
+models:
+  - id: faster-whisper-large-v3
+    kind: asr
+    repo_id: Systran/faster-whisper-large-v3
+    revision: edaa852ec7e145841d8ffdb056a99866b5f0a478
+    license: MIT
+    required_files: [model.bin, config.json, tokenizer.json, vocabulary.json, preprocessor_config.json]
+    min_bytes:
+      model.bin: 2770000000
+      config.json: 100
+      tokenizer.json: 2000000
+      vocabulary.json: 900000
+      preprocessor_config.json: 100
+    runtime: faster-whisper
+    status: supported
+  - id: faster-whisper-small
+    kind: asr
+    repo_id: Systran/faster-whisper-small
+    revision: 536b0662742c02347bc0e980a01041f333bce120
+    license: MIT
+    required_files: [model.bin, config.json, tokenizer.json, vocabulary.txt]
+    min_bytes:
+      model.bin: 435000000
+      config.json: 100
+      tokenizer.json: 1000000
+      vocabulary.txt: 100000
+    runtime: faster-whisper
+    status: supported
+  - id: Qwen3-ForcedAligner-0.6B
+    kind: align
+    repo_id: Qwen/Qwen3-ForcedAligner-0.6B
+    revision: c7cbfc2048c462b0d63a45797104fc9db3ad62b7
+    license: Apache-2.0
+    required_files: [model.safetensors, config.json, vocab.json, merges.txt]
+    min_bytes:
+      model.safetensors: 1650000000
+      config.json: 100
+      vocab.json: 2500000
+      merges.txt: 100000
+    runtime: qwen3-forced-aligner
+    status: planned
