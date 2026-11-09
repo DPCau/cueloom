@@ -3,8 +3,10 @@
 .venv
 .env
 .env.*
+configs/local.yaml
 work
 out
+inbox
 models
 .agents
 .workbuddy

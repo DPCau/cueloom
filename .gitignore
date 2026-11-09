@@ -25,6 +25,8 @@ models/*
 *.safetensors
 out/
 work/
+# U-12 浏览器上传素材（M0.7），不入库
+inbox/
 *.log
 
 # 本地配置与密钥
