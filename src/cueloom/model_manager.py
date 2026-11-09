@@ -129,7 +129,12 @@ class ModelManager:
                 records.append(dict(id=model_id, kind=entry["kind"], path=str(path),
                                     state=state, size_bytes=size, supported=entry["status"] == "supported",
                                     status=entry["status"], managed=True, license=entry["license"],
-                                    is_default=model_id == default, issues=issues))
+                                    is_default=model_id == default, issues=issues,
+                                    family=entry.get("family", model_id),
+                                    family_name=entry.get("family_name", model_id),
+                                    variant=entry.get("variant", model_id),
+                                    description=entry.get("description", ""),
+                                    runtime=entry.get("runtime", "")))
                 seen.add((entry["kind"], model_id))
             for kind in ("asr", "align"):
                 parent = self._safe(self.models / kind)

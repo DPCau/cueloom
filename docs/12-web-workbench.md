@@ -7,6 +7,7 @@
 ### 2026-11-09 实施与验收说明
 
 - 新增 `control/` 配置、鉴权、上传、任务服务；六页零构建前端；模型扫描、显式下载、默认切换与确认软删除均已接线。
+- 模型页按「用途 → 家族 → 版本」分组：语音识别下 Whisper 家族汇集 small / large-v3，faster-whisper 是运行引擎，不作为另一个平级家族。Qwen3 Forced Aligner 归时间对齐，明确尚未接入；未托管资产独立展示，不按名称猜家族。注册表维护 family/family_name/variant/description，API 增量返回展示字段；操作仍绑定唯一模型 ID，磁盘布局不变。
 - 上传采用 `POST /api/uploads` 原始文件 body + URL 编码 `X-Filename`；发任务为 `POST /api/jobs`，仅接受 upload ID 或显式 demo。不开放服务端路径。下载仅允许任务目录下 SRT/VTT/ASS。
 - 配置由 schema 白名单控制，原子落盘 `.env` / `configs/local.yaml`，默认模板不改，下一任务用深拷贝快照；API key 不回显。容器配置只读。
 - 对齐仍为 `none` 规则/线性 Fallback；Qwen 对齐模型标 planned，不可作为运行默认模型。下载任务仅报告运行/成功/失败，暂不提供精确字节百分比。

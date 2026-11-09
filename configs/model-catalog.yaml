@@ -1,5 +1,9 @@
 models:
   - id: faster-whisper-large-v3
+    variant: large-v3
+    description: 较大规格，资源需求更高；实际速度与效果需按设备和素材验证。
+    family: whisper
+    family_name: Whisper
     kind: asr
     repo_id: Systran/faster-whisper-large-v3
     revision: edaa852ec7e145841d8ffdb056a99866b5f0a478
@@ -14,6 +18,10 @@ models:
     runtime: faster-whisper
     status: supported
   - id: faster-whisper-small
+    variant: small
+    description: 较小规格，可用于先验证真实识别流程。
+    family: whisper
+    family_name: Whisper
     kind: asr
     repo_id: Systran/faster-whisper-small
     revision: 536b0662742c02347bc0e980a01041f333bce120
@@ -27,6 +35,10 @@ models:
     runtime: faster-whisper
     status: supported
   - id: Qwen3-ForcedAligner-0.6B
+    family: qwen3-forced-aligner
+    family_name: Qwen3 Forced Aligner
+    variant: 0.6B
+    description: 仅登记模型资产；对齐运行后端尚未接入，下载后也不能用于当前流水线。
     kind: align
     repo_id: Qwen/Qwen3-ForcedAligner-0.6B
     revision: c7cbfc2048c462b0d63a45797104fc9db3ad62b7

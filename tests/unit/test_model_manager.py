@@ -43,6 +43,19 @@ def record(manager, model_id="small"):
     return next(r for r in manager.list_models() if r["id"] == model_id)
 
 
+def test_family_metadata_and_legacy_catalog_fallback(manager):
+    assert record(manager)["family"] == "small"
+    for model_id in ("small", "large"):
+        manager.catalog[model_id].update(
+            family="whisper", family_name="Whisper", variant=model_id,
+            description="测试版本",
+        )
+    rows = [r for r in manager.list_models() if r["kind"] == "asr"]
+    assert {r["family"] for r in rows} == {"whisper"}
+    assert {r["variant"] for r in rows} == {"small", "large"}
+    assert all(r["family_name"] == "Whisper" and r["runtime"] == "faster-whisper" for r in rows)
+
+
 def test_list_missing_complete_partial_lfs(manager):
     assert record(manager)["state"] == "missing"
     path = install(manager)
